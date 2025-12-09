@@ -3,17 +3,7 @@ name: Verificación Programada
 # Este workflow se ejecuta automáticamente según un schedule
 on:
   schedule:
-    # Cron syntax: minuto hora día mes día-de-la-semana
-    # Ejecutar todos los días a las 8:00 AM UTC
-    - cron: '0 8 * * *'
-    
-    # Ejecutar cada lunes a las 9:00 AM UTC
-    # - cron: '0 9 * * 1'
-    
-    # Ejecutar cada hora
-    # - cron: '0 * * * *'
-  
-  # También permite ejecución manual
+    - cron: '0 8 * * *'  # Diario a las 8:00 AM UTC
   workflow_dispatch:
 
 jobs:
@@ -38,34 +28,16 @@ jobs:
           echo "===================================="
           echo "🏥 INICIANDO HEALTH CHECK"
           echo "===================================="
-          echo "Fecha y hora: $(date)"
-          echo "===================================="
-          
-          # Ejecutar tests
+          date
           npm test
-          
-          echo "===================================="
           echo "✅ Health Check completado exitosamente!"
-          echo "Sistema funcionando correctamente"
-          echo "===================================="
       
       - name: 📊 Estadísticas del sistema
         run: |
-          echo "===================================="
-          echo "ESTADÍSTICAS DEL RUNNER"
-          echo "===================================="
-          echo "Uptime del sistema:"
-          uptime
-          echo "===================================="
-          echo "Uso de disco:"
-          df -h | grep -E "Filesystem|/dev/root"
-          echo "===================================="
-          echo "Memoria disponible:"
-          free -h
-          echo "===================================="
-          echo "Procesos activos:"
-          ps aux | wc -l
-          echo "===================================="
+          echo "Uptime:"; uptime
+          echo "Disco:"; df -h | grep -E "Filesystem|/dev/root"
+          echo "Memoria:"; free -h
+          echo "Procesos activos:"; ps aux | wc -l
 
   scheduled-test:
     name: 🧪 Tests Programados
@@ -83,28 +55,19 @@ jobs:
       - name: 📦 Instalar dependencias
         run: npm install
       
+      - name: 🔍 Ejecutar ESLint
+        run: npx eslint .
+      
       - name: 🧪 Ejecutar suite de tests
         run: npm test
       
       - name: 📝 Log del resultado
         if: always()
         run: |
-          echo "===================================="
-          echo "REGISTRO DE EJECUCIÓN PROGRAMADA"
-          echo "===================================="
-          echo "Workflow: ${{ github.workflow }}"
-          echo "Ejecutado: $(date)"
-          echo "Disparador: ${{ github.event_name }}"
-          echo "Repositorio: ${{ github.repository }}"
-          echo "===================================="
-
-      # 🔥 Nuevo step para guardar logs como artifact
-      - name: 📄 Guardar log
-        if: always()
-        run: |
-          echo "Logs generados el: $(date)" > log.txt
-          echo "Estado del health-check: ${{ needs.health-check.result }}" >> log.txt
-          echo "Estado del scheduled-test: ${{ needs.scheduled-test.result }}" >> log.txt
+          echo "Workflow: ${{ github.workflow }}" > log.txt
+          echo "Ejecutado: $(date)" >> log.txt
+          echo "Disparador: ${{ github.event_name }}" >> log.txt
+          echo "Repositorio: ${{ github.repository }}" >> log.txt
 
       - name: 📤 Subir artifact del log
         uses: actions/upload-artifact@v3
@@ -121,35 +84,10 @@ jobs:
     steps:
       - name: 📬 Estado de la verificación
         run: |
-          echo "===================================="
-          echo "RESUMEN DE VERIFICACIÓN PROGRAMADA"
-          echo "===================================="
-          echo "Fecha: $(date)"
-          echo "Estado de health-check: ${{ needs.health-check.result }}"
-          echo "Estado de scheduled-test: ${{ needs.scheduled-test.result }}"
-          echo "===================================="
-          
+          echo "Estado health-check: ${{ needs.health-check.result }}"
+          echo "Estado scheduled-test: ${{ needs.scheduled-test.result }}"
           if [ "${{ needs.health-check.result }}" == "success" ] && [ "${{ needs.scheduled-test.result }}" == "success" ]; then
-            echo "✅ Todos los checks pasaron exitosamente"
+            echo "✅ Todos los checks pasaron"
           else
-            echo "⚠️ Algunos checks fallaron - revisar logs"
-            exit 1
-          fi
-          echo "===================================="
-
-# NOTAS SOBRE CRON SYNTAX:
-# ┌───────────── minuto (0 - 59)
-# │ ┌───────────── hora (0 - 23)
-# │ │ ┌───────────── día del mes (1 - 31)
-# │ │ │ ┌───────────── mes (1 - 12)
-# │ │ │ │ ┌───────────── día de la semana (0 - 6) (Domingo = 0)
-# │ │ │ │ │
-# * * * * *
-#
-# Ejemplos útiles:
-# '0 0 * * *'     - Diario a medianoche
-# '0 */6 * * *'   - Cada 6 horas
-# '0 9 * * 1-5'   - 9 AM de Lunes a Viernes
-# '0 0 1 * *'     - Primer día de cada mes a medianoche
-# '*/15 * * * *'  - Cada 15 minutos
+            echo "⚠️ Algunos checks fallaron"; exit 1
 
