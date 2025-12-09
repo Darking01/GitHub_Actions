@@ -98,6 +98,20 @@ jobs:
           echo "Repositorio: ${{ github.repository }}"
           echo "===================================="
 
+      # 🔥 Nuevo step para guardar logs como artifact
+      - name: 📄 Guardar log
+        if: always()
+        run: |
+          echo "Logs generados el: $(date)" > log.txt
+          echo "Estado del health-check: ${{ needs.health-check.result }}" >> log.txt
+          echo "Estado del scheduled-test: ${{ needs.scheduled-test.result }}" >> log.txt
+
+      - name: 📤 Subir artifact del log
+        uses: actions/upload-artifact@v3
+        with:
+          name: log-programado
+          path: log.txt
+
   notify-status:
     name: 📬 Notificación de Estado
     needs: [health-check, scheduled-test]
@@ -138,3 +152,4 @@ jobs:
 # '0 9 * * 1-5'   - 9 AM de Lunes a Viernes
 # '0 0 1 * *'     - Primer día de cada mes a medianoche
 # '*/15 * * * *'  - Cada 15 minutos
+
